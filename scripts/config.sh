@@ -166,31 +166,9 @@ function phala_scripts_config_set_nodename() {
 }
 
 function phala_scripts_config_set_locale() {
-  if [[ "$(tty)" =~ "pts" ]];then
-    :
-  else
-    export PHALA_LANG=US
-    echo US
-    return 0
-  fi
-  # set locale
-  if [ "${PHALA_LANG}" == "CN" ] || [ "${PHALA_LANG}" == "US" ];then
-    _phala_scripts_utils_printf_value="${PHALA_LANG}"
-  else
-    _phala_scripts_utils_printf_value="US"
-  fi
-  # local _phala_lang=$(phala_scripts_utils_read "Set phala locale" ${_phala_scripts_utils_printf_value})
-  local _set_lang=$(phala_scripts_utils_gettext "Set Language")
-  local _set_choices=$(phala_scripts_utils_gettext "Choices")
-  local _phala_lang=$(whiptail --title "${_set_lang}" --clear --default-item ${_phala_scripts_utils_printf_value} --menu "${_set_choices}" 12 35 5 ${phala_scripts_support_language[@]} 3>&1 1>&2 2>&3)
-  local _phala_lang_tr=$(echo ${_phala_lang}|tr a-z A-Z)
-  if [ "${_phala_lang_tr}" == "CN" ] || [ "${_phala_lang_tr}" == "US" ];then
-    result_msg=${_phala_lang_tr}
-  else
-    result_msg=${_phala_scripts_utils_printf_value}
-  fi
-  export PHALA_LANG=${result_msg}
-  echo ${result_msg}
+  export PHALA_LANG=US
+  echo US
+  return 0
 }
 
 function phala_scripts_config_set() {
@@ -271,144 +249,144 @@ function phala_scripts_config_set() {
   # skip input err quit
   set +e
 
-  # set core
-  # local _cpu_s=$(LANG=en_US.UTF-8 lscpu|awk -F':' '/^CPU\(s\):/{print $2}')
-  # local _cpu_sockets=$(LANG=en_US.UTF-8 lscpu|awk -F':' '/^Socket\(s\):/{print $2}')
-  local _cpu_s=$(awk -F':' '/physical id/ {print $NF+1}' /proc/cpuinfo|tail -n 1)
-  local _cpu_sockets=$(awk -F ':' '/^siblings/ {print $NF+0;exit}' /proc/cpuinfo)
-  local _my_cpu_core_number=$((${_cpu_s}*${_cpu_sockets}))
-  while true ; do
-    local _cores=$(phala_scripts_utils_read "You will use multiple cores to mine")
-    expr ${_cores} + 0 > /dev/null 2>&1
-    if [ $? -eq 0 ] && [ $_cores -ge 1 ] && [ $_cores -le ${_my_cpu_core_number} ]; then
-      export phala_scripts_config_input_cores=${_cores}
-      break
-    else
-      _phala_scripts_utils_printf_value=${_my_cpu_core_number}
-      phala_scripts_log warn "Please enter an integer greater than 1 and less than %s. Your input is incorrect. Please re-enter!"  cut
-    fi
-  done
+  # # set core
+  # # local _cpu_s=$(LANG=en_US.UTF-8 lscpu|awk -F':' '/^CPU\(s\):/{print $2}')
+  # # local _cpu_sockets=$(LANG=en_US.UTF-8 lscpu|awk -F':' '/^Socket\(s\):/{print $2}')
+  # local _cpu_s=$(awk -F':' '/physical id/ {print $NF+1}' /proc/cpuinfo|tail -n 1)
+  # local _cpu_sockets=$(awk -F ':' '/^siblings/ {print $NF+0;exit}' /proc/cpuinfo)
+  # local _my_cpu_core_number=$((${_cpu_s}*${_cpu_sockets}))
+  # while true ; do
+  #   local _cores=$(phala_scripts_utils_read "You will use multiple cores to mine")
+  #   expr ${_cores} + 0 > /dev/null 2>&1
+  #   if [ $? -eq 0 ] && [ $_cores -ge 1 ] && [ $_cores -le ${_my_cpu_core_number} ]; then
+  #     export phala_scripts_config_input_cores=${_cores}
+  #     break
+  #   else
+  #     _phala_scripts_utils_printf_value=${_my_cpu_core_number}
+  #     phala_scripts_log warn "Please enter an integer greater than 1 and less than %s. Your input is incorrect. Please re-enter!"  cut
+  #   fi
+  # done
 
-  # set nodename
-  export phala_scripts_config_input_nodename=$(phala_scripts_config_set_nodename)
+  # # set nodename
+  # export phala_scripts_config_input_nodename=$(phala_scripts_config_set_nodename)
 
-  if [ "${_phala_env}" == "${phala_dev_msg}" ];then
-    phala_scripts_public_ws=${phala_scripts_public_ws_dev}
-  fi
+  # if [ "${_phala_env}" == "${phala_dev_msg}" ];then
+  #   phala_scripts_public_ws=${phala_scripts_public_ws_dev}
+  # fi
 
-  # set mnemonic gas_account_address
-  local _mnemonic=""
-  local _gas_adress=""
-  local _balance=""
-  while true ; do
-    _mnemonic=$(phala_scripts_utils_read "Enter your gas account mnemonic")
-    if [ -z "${_mnemonic}" ] || [ "$(node ${phala_scripts_tools_dir}/console.js utils verify "$_mnemonic")" == "Cannot decode the input" ]; then
-      phala_scripts_log warn "Please enter a valid mnemonic, and it cannot be empty!" cut
-    else
-      _gas_adress=$(node ${phala_scripts_tools_dir}/console.js utils verify "$_mnemonic")
-      _balance=$(node  ${phala_scripts_tools_dir}/console.js --substrate-ws-endpoint "${phala_scripts_public_ws}" chain free-balance $_gas_adress 2>&1)
-      _balance=$(echo $_balance | awk -F " " '{print $NF}')
-      [ -z "${_balance}" ] && _balance=0
-      _balance=$(echo "$_balance / 1000000000000"|bc)
-      if [ `echo "$_balance > 0.1"|bc` -eq 1 ]; then
-        export phala_scripts_config_input_mnemonic=${_mnemonic}
-        export phala_scripts_config_gas_account_address=${_gas_adress}
-        break
-      else
-        phala_scripts_log warn "You have less than 0.1 PHA in your account!" cut
-      fi
-    fi
-  done
+  # # set mnemonic gas_account_address
+  # local _mnemonic=""
+  # local _gas_adress=""
+  # local _balance=""
+  # while true ; do
+  #   _mnemonic=$(phala_scripts_utils_read "Enter your gas account mnemonic")
+  #   if [ -z "${_mnemonic}" ] || [ "$(node ${phala_scripts_tools_dir}/console.js utils verify "$_mnemonic")" == "Cannot decode the input" ]; then
+  #     phala_scripts_log warn "Please enter a valid mnemonic, and it cannot be empty!" cut
+  #   else
+  #     _gas_adress=$(node ${phala_scripts_tools_dir}/console.js utils verify "$_mnemonic")
+  #     _balance=$(node  ${phala_scripts_tools_dir}/console.js --substrate-ws-endpoint "${phala_scripts_public_ws}" chain free-balance $_gas_adress 2>&1)
+  #     _balance=$(echo $_balance | awk -F " " '{print $NF}')
+  #     [ -z "${_balance}" ] && _balance=0
+  #     _balance=$(echo "$_balance / 1000000000000"|bc)
+  #     if [ `echo "$_balance > 0.1"|bc` -eq 1 ]; then
+  #       export phala_scripts_config_input_mnemonic=${_mnemonic}
+  #       export phala_scripts_config_gas_account_address=${_gas_adress}
+  #       break
+  #     else
+  #       phala_scripts_log warn "You have less than 0.1 PHA in your account!" cut
+  #     fi
+  #   fi
+  # done
   
-  # set operator
-  local _pool_addr=""
-  while true ; do
-    local _pool_addr=$(phala_scripts_utils_read "Enter your pool owner's address")
-    if [ -z "${_pool_addr}" ] || [ "$(node ${phala_scripts_tools_dir}/console.js utils verify "$_pool_addr")" == "Cannot decode the input" ]; then
-      phala_scripts_log warn "Please enter a valid pool owner's address, and it cannot be empty!"
-    else
-      export phala_scripts_config_input_operator=${_pool_addr}
-      break
-    fi
-  done
+  # # set operator
+  # local _pool_addr=""
+  # while true ; do
+  #   local _pool_addr=$(phala_scripts_utils_read "Enter your pool owner's address")
+  #   if [ -z "${_pool_addr}" ] || [ "$(node ${phala_scripts_tools_dir}/console.js utils verify "$_pool_addr")" == "Cannot decode the input" ]; then
+  #     phala_scripts_log warn "Please enter a valid pool owner's address, and it cannot be empty!"
+  #   else
+  #     export phala_scripts_config_input_operator=${_pool_addr}
+  #     break
+  #   fi
+  # done
 
-  set -e
+  # set -e
 
-  # add old scripts check (testnet is skip)
-  if [ -d /var/khala-dev-node ] && [ -d /var/khala-pruntime-data ] && [ ! -L /var/khala-dev-node ] && [ ! -L /var/khala-pruntime-data ] && [ "${_phala_env}" != "${phala_dev_msg}" ];then
-    phala_scripts_log info "Old scripts found"
-    phala_scripts_config_set_migrate="y"
-    # modify old scripts auto migrate
-    # phala_scripts_config_set_migrate=$(phala_scripts_utils_read "migrate(y/n)?"  "${phala_scripts_config_set_migrate}"| tr A-Z a-z)
-    # while true;do
-    #   if [ "${phala_scripts_config_set_migrate}" == "y" ] || [ "${phala_scripts_config_set_migrate}" == "n" ];then
-    #     break
-    #   else
-    #     phala_scripts_config_set_migrate="y"
-    #     phala_scripts_config_set_migrate=$(phala_scripts_utils_read "migrate(y/n)?"  "${phala_scripts_config_set_migrate}"| tr A-Z a-z)
-    #   fi
-    # done
-  fi
+  # # add old scripts check (testnet is skip)
+  # if [ -d /var/khala-dev-node ] && [ -d /var/khala-pruntime-data ] && [ ! -L /var/khala-dev-node ] && [ ! -L /var/khala-pruntime-data ] && [ "${_phala_env}" != "${phala_dev_msg}" ];then
+  #   phala_scripts_log info "Old scripts found"
+  #   phala_scripts_config_set_migrate="y"
+  #   # modify old scripts auto migrate
+  #   # phala_scripts_config_set_migrate=$(phala_scripts_utils_read "migrate(y/n)?"  "${phala_scripts_config_set_migrate}"| tr A-Z a-z)
+  #   # while true;do
+  #   #   if [ "${phala_scripts_config_set_migrate}" == "y" ] || [ "${phala_scripts_config_set_migrate}" == "n" ];then
+  #   #     break
+  #   #   else
+  #   #     phala_scripts_config_set_migrate="y"
+  #   #     phala_scripts_config_set_migrate=$(phala_scripts_utils_read "migrate(y/n)?"  "${phala_scripts_config_set_migrate}"| tr A-Z a-z)
+  #   #   fi
+  #   # done
+  # fi
 
-  # set custom datadir
-  khala_data_path_default=$(phala_scripts_utils_read "Enter your Khala DATA PATH"  "${khala_data_path_default}")
+  # # set custom datadir
+  # khala_data_path_default=$(phala_scripts_utils_read "Enter your Khala DATA PATH"  "${khala_data_path_default}")
   
-  # khala_data_path_default="${khala_data_path_default%/}/$(echo -en ${_phala_env}|tr A-Z a-z)"
-  if [ "${_phala_env}" == "${phala_dev_msg}" ];then
-    # khala_data_path_default="${khala_data_path_default%/}_$(echo -en ${_phala_env}|tr A-Z a-z)"
-    khala_data_path_default="${khala_data_path_default%/}_dev"
-  else
-    khala_data_path_default="${khala_data_path_default%/}"
-    # add old scripts migrate
-    if [ "${phala_scripts_config_set_migrate}" == "y" ];then
-      if [ -f /opt/phala/docker-compose.yml ];then
-        cd /opt/phala
-        docker-compose stop
-        docker-compose rm -f
-      fi
-      [ -d ${khala_data_path_default} ] || mkdir -p ${khala_data_path_default}
-      phala_scripts_log info "migrate [ /var/khala-dev-node ] to [ ${khala_data_path_default}/node-data ]"
-      mv /var/khala-dev-node ${khala_data_path_default}/node-data
-      phala_scripts_log info "migrate [ /var/khala-pruntime-data ] to [ ${khala_data_path_default}/pruntime-data ]"
-      mv /var/khala-pruntime-data ${khala_data_path_default}/pruntime-data
-    fi
-  fi
+  # # khala_data_path_default="${khala_data_path_default%/}/$(echo -en ${_phala_env}|tr A-Z a-z)"
+  # if [ "${_phala_env}" == "${phala_dev_msg}" ];then
+  #   # khala_data_path_default="${khala_data_path_default%/}_$(echo -en ${_phala_env}|tr A-Z a-z)"
+  #   khala_data_path_default="${khala_data_path_default%/}_dev"
+  # else
+  #   khala_data_path_default="${khala_data_path_default%/}"
+  #   # add old scripts migrate
+  #   if [ "${phala_scripts_config_set_migrate}" == "y" ];then
+  #     if [ -f /opt/phala/docker-compose.yml ];then
+  #       cd /opt/phala
+  #       docker-compose stop
+  #       docker-compose rm -f
+  #     fi
+  #     [ -d ${khala_data_path_default} ] || mkdir -p ${khala_data_path_default}
+  #     phala_scripts_log info "migrate [ /var/khala-dev-node ] to [ ${khala_data_path_default}/node-data ]"
+  #     mv /var/khala-dev-node ${khala_data_path_default}/node-data
+  #     phala_scripts_log info "migrate [ /var/khala-pruntime-data ] to [ ${khala_data_path_default}/pruntime-data ]"
+  #     mv /var/khala-pruntime-data ${khala_data_path_default}/pruntime-data
+  #   fi
+  # fi
 
-  # save conf as env file
-  [ -f ${phala_scripts_docker_envf} ] && chattr -i ${phala_scripts_docker_envf}
-  sed -e "s#NODE_IMAGE=.*#NODE_IMAGE=${phala_node_image}#g" \
-      -e "s#PRUNTIME_IMAGE=.*#PRUNTIME_IMAGE=${phala_pruntime_image}#g" \
-      -e "s#PHERRY_IMAGE=.*#PHERRY_IMAGE=${phala_pherry_image}#g" \
-      -e "s#CORES=.*#CORES=${phala_scripts_config_input_cores}#g" \
-      -e "s#NODE_NAME=.*#NODE_NAME=${phala_scripts_config_input_nodename}#g" \
-      -e "s#MNEMONIC=.*#MNEMONIC=${phala_scripts_config_input_mnemonic}#g" \
-      -e "s#GAS_ACCOUNT_ADDRESS=.*#GAS_ACCOUNT_ADDRESS=${phala_scripts_config_gas_account_address}#g" \
-      -e "s#OPERATOR=.*#OPERATOR=${phala_scripts_config_input_operator}#g" \
-      -e "s#phala_template_data_value#${khala_data_path_default}#g" \
-      -e "s#PHALA_ENV=.*#PHALA_ENV=${_phala_env}#g" \
-      -e "s#PHALA_LANG=.*#PHALA_LANG=${phala_scripts_config_input_lang}#g" \
-      ${phala_scripts_temp_envf} > ${phala_scripts_docker_envf}
-  chattr +i ${phala_scripts_docker_envf}
+  # # save conf as env file
+  # [ -f ${phala_scripts_docker_envf} ] && chattr -i ${phala_scripts_docker_envf}
+  # sed -e "s#NODE_IMAGE=.*#NODE_IMAGE=${phala_node_image}#g" \
+  #     -e "s#PRUNTIME_IMAGE=.*#PRUNTIME_IMAGE=${phala_pruntime_image}#g" \
+  #     -e "s#PHERRY_IMAGE=.*#PHERRY_IMAGE=${phala_pherry_image}#g" \
+  #     -e "s#CORES=.*#CORES=${phala_scripts_config_input_cores}#g" \
+  #     -e "s#NODE_NAME=.*#NODE_NAME=${phala_scripts_config_input_nodename}#g" \
+  #     -e "s#MNEMONIC=.*#MNEMONIC=${phala_scripts_config_input_mnemonic}#g" \
+  #     -e "s#GAS_ACCOUNT_ADDRESS=.*#GAS_ACCOUNT_ADDRESS=${phala_scripts_config_gas_account_address}#g" \
+  #     -e "s#OPERATOR=.*#OPERATOR=${phala_scripts_config_input_operator}#g" \
+  #     -e "s#phala_template_data_value#${khala_data_path_default}#g" \
+  #     -e "s#PHALA_ENV=.*#PHALA_ENV=${_phala_env}#g" \
+  #     -e "s#PHALA_LANG=.*#PHALA_LANG=${phala_scripts_config_input_lang}#g" \
+  #     ${phala_scripts_temp_envf} > ${phala_scripts_docker_envf}
+  # chattr +i ${phala_scripts_docker_envf}
 
-  if [ -f "${phala_scripts_dir}/.env" ] && [ -L "${phala_scripts_dir}/.env" ];then
-    unlink ${phala_scripts_dir}/.env
-  elif [ -f "${phala_scripts_dir}/.env" ] && [ ! -L "${phala_scripts_dir}/.env" ];then
-    _bak_time=$(date +%s)
-    phala_scripts_log info "move ${phala_scripts_dir}/.env ${phala_scripts_dir}/.env.${_bak_time}.bak" cut
-    mv ${phala_scripts_dir}/.env ${phala_scripts_dir}/.env.${_bak_time}.bak
-  fi
-  ln -s ${phala_scripts_docker_envf} ${phala_scripts_dir}/.env
+  # if [ -f "${phala_scripts_dir}/.env" ] && [ -L "${phala_scripts_dir}/.env" ];then
+  #   unlink ${phala_scripts_dir}/.env
+  # elif [ -f "${phala_scripts_dir}/.env" ] && [ ! -L "${phala_scripts_dir}/.env" ];then
+  #   _bak_time=$(date +%s)
+  #   phala_scripts_log info "move ${phala_scripts_dir}/.env ${phala_scripts_dir}/.env.${_bak_time}.bak" cut
+  #   mv ${phala_scripts_dir}/.env ${phala_scripts_dir}/.env.${_bak_time}.bak
+  # fi
+  # ln -s ${phala_scripts_docker_envf} ${phala_scripts_dir}/.env
 
-  # run config docker-compose.yml update sgx device
-  phala_scripts_config_dockeryml
+  # # run config docker-compose.yml update sgx device
+  # phala_scripts_config_dockeryml
 
-  # start all service
-  phala_scripts_stop_container
-  phala_scripts_config_default
-  phala_scripts_start
+  # # start all service
+  # phala_scripts_stop_container
+  # phala_scripts_config_default
+  # phala_scripts_start
   
-  # print sucess
-  phala_scripts_log info "Set successful" cut
+  # # print sucess
+  # phala_scripts_log info "Set successful" cut
 
 }
 
